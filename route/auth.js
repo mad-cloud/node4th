@@ -1,9 +1,8 @@
 const exp = require("express").Router()
 const bcrypt = require('bcrypt')
-const users = require('../db')
+const users = [] //storing data and also accessing data
 const jwtToken = require('jsonwebtoken')
-const { check, validationResult } = require('express-validator')
-const { Router } = require("express")
+const { check, validationResult } = require('express-validator') //validate email,password
 exp.post('/signup', [
     check("email", "please provide a valid mail")
         .isEmail(),
@@ -13,7 +12,7 @@ exp.post('/signup', [
         })
 ], async (req, res) => {
     const { email, password } = req.body
-    // validating email and password
+    // taking email and password from user
 
     const error = validationResult(req)
     if (!error.isEmpty()) {
@@ -34,28 +33,30 @@ exp.post('/signup', [
             ]
         })
     }
+    else if (!user) {
+        res.status(400).json({
+            "err": [
+                {
+                    "massege": "Registration successful"
+                }
+            ]
+        })
+    }
     const hashPassword = await bcrypt.hash(password, 10)//hashing the password given by user
-    console.log(hashPassword)
     users.push({
         email,
         password: hashPassword
     })
     // console.log(users)
-    const token = await jwtToken.sign({
-        email               //details of user
-    }, "lkjasdf", {        //secret key
-        expiresIn: 36000
-    })
+
     // console.log(email,password)
-    res.json({
-        token
-    })
+
     // res.send("Auth is working")
 })
 
 exp.post('/login', async (req, res) => {
     const { password, email } = req.body
-    let user = users.find((user) => {
+    let user = users.find((user) => {   //validating if user is present or not
         return user.email === email;
     })
 
@@ -69,7 +70,7 @@ exp.post('/login', async (req, res) => {
         })
     }
 
-    let match = await bcrypt.compare(password, user.password)
+    let match = await bcrypt.compare(password, user.password)//if user is present then we compare the password entered by user with the password stored in users array
     if (!match) {
         return res.status(400).json({
             "err": [
